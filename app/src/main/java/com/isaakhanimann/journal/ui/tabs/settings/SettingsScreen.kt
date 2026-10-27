@@ -105,6 +105,8 @@ fun SettingsPreview() {
         onCancelImport = {},
         exportFile = {},
         snackbarHostState = remember { SnackbarHostState() },
+        customizeSettings = CustomizeSettings(),
+        saveCustomizeSettings = {},
         areDosageDotsHidden = false,
         saveDosageDotsAreHidden = {},
         isTimelineHidden = false,
@@ -146,6 +148,8 @@ fun SettingsScreen(
         onCancelImport = viewModel::cancelImport,
         exportFile = viewModel::exportFile,
         snackbarHostState = viewModel.snackbarHostState,
+        customizeSettings = viewModel.customizeSettingsFlow.collectAsState().value,
+        saveCustomizeSettings = viewModel::saveCustomizeSettings,
         areDosageDotsHidden = viewModel.areDosageDotsHiddenFlow.collectAsState().value,
         saveDosageDotsAreHidden = viewModel::saveDosageDotsAreHidden,
         isTimelineHidden = viewModel.isTimelineHiddenFlow.collectAsState().value,
@@ -181,6 +185,9 @@ fun SettingsScreen(
     onCancelImport: () -> Unit,
     exportFile: (uri: Uri) -> Unit,
     snackbarHostState: SnackbarHostState,
+    // which tabs and sections of the app are shown
+    customizeSettings: CustomizeSettings,
+    saveCustomizeSettings: (CustomizeSettings) -> Unit,
     areDosageDotsHidden: Boolean,
     saveDosageDotsAreHidden: (Boolean) -> Unit,
     isTimelineHidden: Boolean,
@@ -318,6 +325,31 @@ fun SettingsScreen(
                     onCheckedChange = saveIsRoutineSuggested
                 )
             }
+            CardWithTitle(title = "Customize", innerPaddingHorizontal = 0.dp) {
+                SwitchRow(
+                    title = "Show Stats tab",
+                    checked = customizeSettings.isStatsTabShown,
+                    onCheckedChange = { saveCustomizeSettings(customizeSettings.copy(isStatsTabShown = it)) }
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = "Show Drugs tab",
+                    checked = customizeSettings.isDrugsTabShown,
+                    onCheckedChange = { saveCustomizeSettings(customizeSettings.copy(isDrugsTabShown = it)) }
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = "Show Safer tab",
+                    checked = customizeSettings.isSaferTabShown,
+                    onCheckedChange = { saveCustomizeSettings(customizeSettings.copy(isSaferTabShown = it)) }
+                )
+                HorizontalDivider()
+                SwitchRow(
+                    title = "Show Feedback section",
+                    checked = customizeSettings.isFeedbackShown,
+                    onCheckedChange = { saveCustomizeSettings(customizeSettings.copy(isFeedbackShown = it)) }
+                )
+            }
             CardWithTitle(title = "App data", innerPaddingHorizontal = 0.dp) {
                 var isShowingExportDialog by remember { mutableStateOf(false) }
                 SettingsButton(imageVector = Icons.Outlined.FileUpload, text = "Export File") {
@@ -436,14 +468,16 @@ fun SettingsScreen(
                 }
             }
             val uriHandler = LocalUriHandler.current
-            CardWithTitle(title = "Feedback", innerPaddingHorizontal = 0.dp) {
-                SettingsButton(imageVector = Icons.Outlined.QuestionAnswer, text = "FAQ") {
-                    navigateToFAQ()
-                }
-                HorizontalDivider()
-                val feedbackContext = LocalContext.current
-                SettingsButton(imageVector = Icons.Outlined.ContentCopy, text = "Copy support info") {
-                    copySupportInfo(feedbackContext)
+            if (customizeSettings.isFeedbackShown) {
+                CardWithTitle(title = "Feedback", innerPaddingHorizontal = 0.dp) {
+                    SettingsButton(imageVector = Icons.Outlined.QuestionAnswer, text = "FAQ") {
+                        navigateToFAQ()
+                    }
+                    HorizontalDivider()
+                    val feedbackContext = LocalContext.current
+                    SettingsButton(imageVector = Icons.Outlined.ContentCopy, text = "Copy support info") {
+                        copySupportInfo(feedbackContext)
+                    }
                 }
             }
             CardWithTitle(title = "App", innerPaddingHorizontal = 0.dp) {
@@ -498,6 +532,24 @@ fun SettingsButton(imageVector: ImageVector, text: String, onClick: () -> Unit) 
         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
         Text(text)
         Spacer(modifier = Modifier.weight(1f))
+    }
+}
+
+// a setting with a switch and nothing to explain
+@Composable
+private fun SwitchRow(title: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = horizontalPadding),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = title)
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange
+        )
     }
 }
 

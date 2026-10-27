@@ -13,7 +13,8 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "io.github.fseixaspt.psyjournal"
+        // the personal build installs next to PsyJournal and the original app
+        applicationId = "io.github.fseixaspt.psyjournal.personal"
         minSdk = 26
         targetSdk = 36
         versionCode = 66

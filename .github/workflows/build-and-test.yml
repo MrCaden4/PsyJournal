@@ -4,7 +4,7 @@ name: Build and test
 # releases are built and signed locally, so the signing key never leaves the maintainer's machine.
 on:
   push:
-    branches: [main]
+    branches: [main, personal]
   pull_request:
   workflow_dispatch:
 

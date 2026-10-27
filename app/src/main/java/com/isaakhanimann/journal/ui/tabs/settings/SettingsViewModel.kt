@@ -44,6 +44,17 @@ class SettingsViewModel @Inject constructor(
     private val liveNotificationController: LiveNotificationController,
 ) : ViewModel() {
 
+    val customizeSettingsFlow = userPreferences.customizeSettingsFlow.stateIn(
+        initialValue = CustomizeSettings(),
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000)
+    )
+
+    // the navigation bar and the settings sections follow the change at once, through their flows
+    fun saveCustomizeSettings(settings: CustomizeSettings) = viewModelScope.launch {
+        userPreferences.saveCustomizeSettings(settings)
+    }
+
     val isRoutineSuggestedFlow = userPreferences.isRoutineSuggestedFlow.stateIn(
         initialValue = true,
         scope = viewModelScope,

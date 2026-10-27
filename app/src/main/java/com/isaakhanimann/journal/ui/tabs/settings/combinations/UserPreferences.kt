@@ -30,6 +30,7 @@ import androidx.datastore.preferences.core.stringSetPreferencesKey
 import com.isaakhanimann.journal.data.substances.AdministrationRoute
 import com.isaakhanimann.journal.ui.tabs.journal.experience.components.SavedTimeDisplayOption
 import com.isaakhanimann.journal.ui.tabs.journal.experience.timeline.PinnedRedose
+import com.isaakhanimann.journal.ui.tabs.settings.CustomizeSettings
 import com.isaakhanimann.journal.ui.tabs.settings.routes.RouteOverride
 import com.isaakhanimann.journal.ui.tabs.settings.routes.RouteVisibility
 import kotlinx.coroutines.flow.Flow
@@ -71,6 +72,11 @@ class UserPreferences @Inject constructor(private val dataStore: DataStore<Prefe
         val KEY_DISMISSED_ROUTINE_OFFERS = stringSetPreferencesKey("KEY_DISMISSED_ROUTINE_OFFERS")
         val KEY_DISMISSED_ROUTINE_DOSES = stringSetPreferencesKey("KEY_DISMISSED_ROUTINE_DOSES")
         val KEY_SUGGEST_ROUTINE = booleanPreferencesKey("KEY_SUGGEST_ROUTINE")
+        // the Customize settings; unset means shown
+        val KEY_IS_STATS_TAB_SHOWN = booleanPreferencesKey("KEY_IS_STATS_TAB_SHOWN")
+        val KEY_IS_DRUGS_TAB_SHOWN = booleanPreferencesKey("KEY_IS_DRUGS_TAB_SHOWN")
+        val KEY_IS_SAFER_TAB_SHOWN = booleanPreferencesKey("KEY_IS_SAFER_TAB_SHOWN")
+        val KEY_IS_FEEDBACK_SHOWN = booleanPreferencesKey("KEY_IS_FEEDBACK_SHOWN")
     }
 
     suspend fun saveTimeDisplayOption(value: SavedTimeDisplayOption) {
@@ -317,6 +323,27 @@ class UserPreferences @Inject constructor(private val dataStore: DataStore<Prefe
             preferences.remove(PreferencesKeys.KEY_DISMISSED_ROUTINE_OFFERS)
             preferences[PreferencesKeys.KEY_DISMISSED_ROUTINE_DOSES] =
                 preferences[PreferencesKeys.KEY_DISMISSED_ROUTINE_DOSES].orEmpty() + ingestionIds.map { it.toString() }
+        }
+    }
+
+    // which tabs and settings sections the Customize settings show; everything is shown until turned off
+    val customizeSettingsFlow: Flow<CustomizeSettings> = dataStore.data
+        .map { preferences ->
+            CustomizeSettings(
+                isStatsTabShown = preferences[PreferencesKeys.KEY_IS_STATS_TAB_SHOWN] ?: true,
+                isDrugsTabShown = preferences[PreferencesKeys.KEY_IS_DRUGS_TAB_SHOWN] ?: true,
+                isSaferTabShown = preferences[PreferencesKeys.KEY_IS_SAFER_TAB_SHOWN] ?: true,
+                isFeedbackShown = preferences[PreferencesKeys.KEY_IS_FEEDBACK_SHOWN] ?: true,
+            )
+        }
+        .distinctUntilChanged()
+
+    suspend fun saveCustomizeSettings(settings: CustomizeSettings) {
+        dataStore.edit { preferences ->
+            preferences[PreferencesKeys.KEY_IS_STATS_TAB_SHOWN] = settings.isStatsTabShown
+            preferences[PreferencesKeys.KEY_IS_DRUGS_TAB_SHOWN] = settings.isDrugsTabShown
+            preferences[PreferencesKeys.KEY_IS_SAFER_TAB_SHOWN] = settings.isSaferTabShown
+            preferences[PreferencesKeys.KEY_IS_FEEDBACK_SHOWN] = settings.isFeedbackShown
         }
     }
 }

@@ -17,7 +17,7 @@
   -->
 
 <resources>
-    <string name="app_name">PsyJournal</string>
+    <string name="app_name">Journal+</string>
     <string name="widget_full_name">Timeline</string>
     <string name="widget_full_description">Chart and phases of the current experience</string>
     <string name="widget_status_name">Timeline status</string>

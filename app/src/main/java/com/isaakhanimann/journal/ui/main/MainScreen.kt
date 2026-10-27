@@ -43,7 +43,10 @@ import com.isaakhanimann.journal.ui.main.navigation.graphs.searchGraph
 import com.isaakhanimann.journal.ui.main.navigation.graphs.settingsGraph
 import com.isaakhanimann.journal.ui.main.navigation.graphs.statsGraph
 import com.isaakhanimann.journal.ui.main.navigation.JournalTopLevelRoute
+import com.isaakhanimann.journal.ui.main.navigation.shownTopLevelRoutes
 import com.isaakhanimann.journal.ui.main.navigation.topLevelRoutes
+import com.isaakhanimann.journal.ui.tabs.settings.CustomizeSettings
+import kotlinx.coroutines.flow.filterNotNull
 
 @Composable
 fun MainScreen(
@@ -54,10 +57,12 @@ fun MainScreen(
     if (viewModel.isAcceptedFlow.collectAsState().value) {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
+        // every tab until the saved Customize settings are read
+        val customizeSettings = viewModel.customizeSettingsFlow.collectAsState().value ?: CustomizeSettings()
         NavigationSuiteScaffold(
             navigationSuiteItems = {
                 val currentDestination = navBackStackEntry?.destination
-                topLevelRoutes.forEach { topLevelRoute ->
+                shownTopLevelRoutes(customizeSettings).forEach { topLevelRoute ->
                     val selected =
                         currentDestination?.hierarchy?.any { it.hasRoute(topLevelRoute.route::class) } == true
                     item(
@@ -105,6 +110,27 @@ fun MainScreen(
                 searchGraph(navController)
                 saferGraph(navController)
                 settingsGraph(navController)
+            }
+            // a tab hidden in the Customize settings while one of its screens is open gives way to the journal,
+            // which is always shown. Only a change made while the app is open counts: the saved settings on launch
+            // or after a rotation must not close a hidden tab's screen that was opened from elsewhere, such as a
+            // substance opened from an experience.
+            LaunchedEffect(Unit) {
+                var before: CustomizeSettings? = null
+                viewModel.customizeSettingsFlow.filterNotNull().collect { settings ->
+                    val hiddenTabs = before?.let { settings.tabsHiddenSince(it) }.orEmpty()
+                    before = settings
+                    val isOnHiddenTab = navController.currentDestination?.hierarchy?.any { destination ->
+                        hiddenTabs.any { destination.hasRoute(it::class) }
+                    } == true
+                    if (isOnHiddenTab) {
+                        navController.navigate(JournalTopLevelRoute) {
+                            popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    }
+                }
             }
             LaunchedEffect(notificationTarget) {
                 when (val target = notificationTarget) {
